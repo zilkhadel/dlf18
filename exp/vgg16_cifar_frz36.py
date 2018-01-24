@@ -43,6 +43,7 @@ if __name__ == '__main__':
     valid_samples = 10  # 100       # number of validation samples
     batch_size = 25     # 16        # number of training samples per gradient update
     epochs = 2          # 10        # number of iteration over the entire training set
+    freeze_first_layers = 36        # number of first layers to freeze
     save_each = 5                   # number of batches after which to save weights
 
     exp_dir = pj(Paths.experiments_dir, EXP_NAME)
@@ -52,7 +53,8 @@ if __name__ == '__main__':
     x_train, y_train, x_valid, y_valid = load_cifar10_data(img_rows, img_cols, train_samples, valid_samples)
 
     # load vgg16 model
-    model = vgg16_model(img_rows, img_cols, img_channels, num_classes)
+    initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
+    model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers)
 
     # start tine-tuning the model
     model.fit(x_train, y_train,

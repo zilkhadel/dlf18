@@ -1,12 +1,9 @@
 from keras.models import Sequential
 from keras.optimizers import SGD
-from keras.layers import Input, Dense, Convolution2D, MaxPooling2D, AveragePooling2D, ZeroPadding2D, Dropout, Flatten, merge, Reshape, Activation
+from keras.layers import Dense, Convolution2D, MaxPooling2D, ZeroPadding2D, Dropout, Flatten  # , Input, AveragePooling2D, merge, Reshape, Activation
 
 
-MODEL_WEIGHTS_PATH = r'C:\Users\EliA\.keras\models\vgg16_weights_tf_dim_ordering_tf_kernels.h5'
-
-
-def vgg16_model(img_rows, img_cols, channel=1, num_classes=None, freeze_first_layers=None, lr=1e-3):
+def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights_path=None, freeze_first_layers=None, lr=1e-3):
     """VGG 16 Model for Keras
 
     Model Schema is based on
@@ -17,11 +14,11 @@ def vgg16_model(img_rows, img_cols, channel=1, num_classes=None, freeze_first_la
 
     Parameters:
       img_rows, img_cols - resolution of inputs
-      channel - 1 for grayscale, 3 for color
+      channels - 1 for grayscale, 3 for color
       num_classes - number of categories for our classification task
     """
     model = Sequential()
-    model.add(ZeroPadding2D((1, 1), input_shape=(img_rows, img_cols, channel)))
+    model.add(ZeroPadding2D((1, 1), input_shape=(img_rows, img_cols, channels)))
     model.add(Convolution2D(64, 3, 3, activation='relu'))
     model.add(ZeroPadding2D((1, 1)))
     model.add(Convolution2D(64, 3, 3, activation='relu'))
@@ -66,8 +63,10 @@ def vgg16_model(img_rows, img_cols, channel=1, num_classes=None, freeze_first_la
     model.add(Dense(1000, activation='softmax'))
 
     # Loads ImageNet pre-trained data
-    # model.load_weights('imagenet_models/vgg16_weights.h5')
-    model.load_weights(MODEL_WEIGHTS_PATH)
+    if initial_weights_path:
+        model.load_weights(initial_weights_path)
+    else:
+        raise Exception('initial_weights_path missing!')
 
     # Truncate and replace softmax layer for transfer learning
     model.layers.pop()
