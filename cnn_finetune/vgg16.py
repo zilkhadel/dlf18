@@ -3,7 +3,7 @@ from keras.optimizers import SGD
 from keras.layers import Dense, Convolution2D, MaxPooling2D, ZeroPadding2D, Dropout, Flatten  # , Input, AveragePooling2D, merge, Reshape, Activation
 
 
-def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights_path=None, freeze_first_layers=None, lr=1e-3):
+def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights_path=None, freeze_first_layers=None, learning_rate=1e-3):
     """VGG 16 Model for Keras
 
     Model Schema is based on
@@ -79,7 +79,7 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
         layer.trainable = False
 
     # Learning rate is changed to 0.001
-    sgd = SGD(lr=lr, decay=1e-6, momentum=0.9, nesterov=True)
+    sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
     model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
 
     return model

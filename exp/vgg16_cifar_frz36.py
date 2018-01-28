@@ -45,6 +45,7 @@ if __name__ == '__main__':
     epochs = 2          # 10        # number of iteration over the entire training set
     freeze_first_layers = 36        # number of first layers to freeze
     save_each = 5                   # number of batches after which to save weights
+    learning_rate = 0.001           # the step to use in each gradient update
 
     exp_dir = pj(Paths.experiments_dir, EXP_NAME)
     mkdirs(exp_dir)
@@ -54,7 +55,7 @@ if __name__ == '__main__':
 
     # load vgg16 model
     initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers)
+    model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers, learning_rate)
 
     # start tine-tuning the model
     model.fit(x_train, y_train,
