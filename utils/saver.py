@@ -1,5 +1,5 @@
 from keras.callbacks import Callback
-from utils.shortcuts import pj
+from utils.shortcuts import pj, dump
 
 
 class WeightsSaver(Callback):
@@ -13,6 +13,9 @@ class WeightsSaver(Callback):
     def on_batch_end(self, batch, logs=None):
         overwrite = True  # if set to False, will keep weights from previous batches (uses a lot of storage!)
         if self.batch % self.save_each == 0:
-            name = pj(self.exp_dir, 'weights.h5' if overwrite else f'weights_{self.batch}.h5')
-            self.model.save_weights(name)
+            weights_path = pj(self.exp_dir, 'weights.h5' if overwrite else f'weights_{self.batch}.h5')
+            log_path = weights_path.replace('.h5', '.log')
+            self.model.save_weights(weights_path)
+            log = {**logs, **self.params}
+            dump(log.items(), log_path)
         self.batch += 1

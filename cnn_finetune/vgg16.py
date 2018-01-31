@@ -3,7 +3,7 @@ from keras.optimizers import SGD
 from keras.layers import Dense, Convolution2D, MaxPooling2D, ZeroPadding2D, Dropout, Flatten  # , Input, AveragePooling2D, merge, Reshape, Activation
 
 
-def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights_path=None, freeze_first_layers=None, learning_rate=1e-3):
+def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights_path=None, freeze_first_layers=None, learning_rate=1e-3, metrics=None):
     """VGG 16 Model for Keras
 
     Model Schema is based on
@@ -54,7 +54,6 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
     model.add(Convolution2D(512, 3, 3, activation='relu'))
     model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
-    # Add Fully Connected Layer
     model.add(Flatten())
     model.add(Dense(4096, activation='relu'))
     model.add(Dropout(0.5))
@@ -62,24 +61,24 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
     model.add(Dropout(0.5))
     model.add(Dense(1000, activation='softmax'))
 
-    # Loads ImageNet pre-trained data
+    # load ImageNet pre-trained data
     if initial_weights_path:
         model.load_weights(initial_weights_path)
     else:
         raise Exception('initial_weights_path missing!')
 
-    # Truncate and replace softmax layer for transfer learning
+    # replace softmax layer for transfer learning
     model.layers.pop()
     model.outputs = [model.layers[-1].output]
     model.layers[-1].outbound_nodes = []
     model.add(Dense(num_classes, activation='softmax'))
 
-    # Uncomment below to set the first 36 layers to non-trainable (weights will not be updated)
+    # freeze layers
     for layer in model.layers[:freeze_first_layers]:
         layer.trainable = False
 
-    # Learning rate is changed to 0.001
+    # compile model
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=['accuracy'])
+    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=metrics or [])
 
     return model

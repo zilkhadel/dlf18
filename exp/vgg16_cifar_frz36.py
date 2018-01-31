@@ -27,6 +27,7 @@ from cnn_finetune.load_cifar10 import load_cifar10_data
 
 from utils.shortcuts import pj, mkdirs, dump, Paths
 from utils.saver import WeightsSaver
+from utils.metrics import f1_score
 
 
 EXP_NAME = 'vgg16_cifar_frz36'
@@ -55,9 +56,10 @@ if __name__ == '__main__':
 
     # load vgg16 model
     initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers, learning_rate)
+    metrics = ['accuracy', f1_score]
+    model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers, learning_rate, metrics)
 
-    # start tine-tuning the model
+    # start fine-tuning the model
     model.fit(x_train, y_train,
               batch_size=batch_size,
               epochs=epochs,
@@ -89,7 +91,8 @@ if __name__ == '__main__':
                  'Start time:': start_time,
                  'End time:': end_time,
                  'Run time:': (end_time - start_time),
-                 'Loss (valid):': loss_valid}  # TODO : add more statistics to the log file.
+                 'Loss (valid):': loss_valid,
+                 '': ''}  # TODO : add more statistics to the log file.
 
     exp_stats_path = pj(exp_dir, f'{EXP_NAME}.log')
-    dump(exp_stats.items(), exp_stats_path)
+    dump(exp_stats.items(), exp_stats_path, append=True)
