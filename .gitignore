@@ -1,2 +1,5 @@
 # PyCharm environment files
 .idea
+
+# debug file
+utils/debug.py
