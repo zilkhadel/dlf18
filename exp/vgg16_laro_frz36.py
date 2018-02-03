@@ -27,7 +27,7 @@ from cnn_finetune.vgg16 import vgg16_model
 from utils.shortcuts import pj, mkdirs, dump, Paths
 from utils.reader import get_train_and_valid_generators
 from utils.saver import WeightsSaver
-from utils.metrics import f1_score
+from utils.metrics import get_f1
 
 
 EXP_NAME = 'vgg16_laro_frz36'
@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # load vgg16 model
     initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    metrics = ['accuracy', f1_score]
+    metrics = ['accuracy', get_f1]
     model = vgg16_model(img_rows, img_cols, img_channels, num_classes, initial_weights_path, freeze_first_layers, learning_rate, metrics)
 
     # start fine-tuning the model
