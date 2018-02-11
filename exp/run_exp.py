@@ -50,9 +50,8 @@ def run_experiemnt(gender,
     train_generator, validation_generator = get_train_and_valid_generators(exp_data_dir, batch_size, img_size)
 
     # load vgg16 model
-    # initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    initial_weights_path = pj(Paths.experiments_dir, 'Laurent_Alexis_2018-02-09_2222', 'Laurent_Alexis_2018-02-09_2222_weights_final.h5')
-    initial_weights_num_classes = 2
+    initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
+    initial_weights_num_classes = 1000
     initial_weights = (initial_weights_path, initial_weights_num_classes)
 
     metrics = ['accuracy']  # accuracy_score, precision_score, recall_score, f1_score
