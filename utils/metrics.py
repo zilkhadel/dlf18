@@ -10,7 +10,7 @@ def get_counts(y_true, y_pred):
     return c1, c2, c3
 
 
-def get_percision(y_true, y_pred):
+def get_precision(y_true, y_pred):
     # count positive samples.
     c1, c2, c3 = get_counts(y_true, y_pred)
 
@@ -40,7 +40,7 @@ def get_recall(y_true, y_pred):
 
 def get_f1(y_true, y_pred):
 
-    precision = get_percision(y_true, y_pred)
+    precision = get_precision(y_true, y_pred)
 
     recall = get_recall(y_true, y_pred)
 

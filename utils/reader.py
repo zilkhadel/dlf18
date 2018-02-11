@@ -2,9 +2,15 @@ import random
 import shutil
 import datetime as dt
 from glob import glob
+
 from keras.preprocessing.image import ImageDataGenerator
 
-from utils.shortcuts import pj, ps, mkdirs, dump, Paths
+from utils.shortcuts import pj, pe, ps, mkdirs, dump, Paths
+
+
+M_SUBJECTS = ['Romain', 'Quentin', 'Pierre', 'Olivier', 'Nicolas', 'Laurent', 'Julien', 'Jerome', 'Clement', 'Cedric', 'Benjamin', 'Arthur', 'Alexis']
+F_SUBJECTS = ['Veronique', 'Mathilde', 'Jeanne', 'Emma', 'Emilie', 'Claire', 'Charlotte', 'Celine', 'Caroline', 'Barbara', 'Aurore', 'Aurelie', 'Anna', 'Angelique', 'Amandine']
+SUBJECTS = {'M': M_SUBJECTS, 'F': F_SUBJECTS}
 
 
 def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
@@ -41,16 +47,38 @@ def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
     return train_generator, validation_generator
 
 
-def gen_exp_data_dir(gender, train_samples, validation_samples):
+def gen_exp_data_dir(gender, train_samples, validation_samples, subjects=None):
+    """
+    Generates a data dir for the experiment, using either random or specified subjects of a given gender with the specified train/validation sets sizes.
+    :param gender: the gender of the subjects to train model on
+    :param train_samples: the number of images to use in training phase
+    :param validation_samples: the number of images to use in validation phase
+    :param subjects: [optional] a tuple of exactly two subject names, of the same gender.
+    :return: the experiment name, the experiment data dir, actual number of training samples, actual number of validation samples
+    """
+
+    gender_source_dir = pj(Paths.data_dir, gender)
+
+    # use specified subjects
+    if subjects:
+        assert len(subjects) == 2, f'Invalid size ({len(subjects)}) for subjects argument. Must be exactly 2!'
+        assert all(subject in SUBJECTS[gender] for subject in subjects), f'Both subjects must be of the specified gender: {gender}'
+
+        subject1_source_dir = pj(gender_source_dir, subjects[0])
+        subject2_source_dir = pj(gender_source_dir, subjects[1])
+        subject1_name = subjects[0]
+        subject2_name = subjects[1]
+
+        assert pe(subject1_source_dir) and pe(subject2_source_dir), f'Images dir for either {subjects[0]} or {subjects[1]} was not found!'
 
     # get two random subjects from relevant gender dir
-    gender_source_dir = pj(Paths.data_dir, gender)
-    gender_source_subjects = glob(pj(gender_source_dir, '*'))
-    random.shuffle(gender_source_subjects)
-    subject1_source_dir = gender_source_subjects[0]
-    subject2_source_dir = gender_source_subjects[1]
-    subject1_name = ps(subject1_source_dir)[1]
-    subject2_name = ps(subject2_source_dir)[1]
+    else:
+        gender_source_subjects = glob(pj(gender_source_dir, '*'))
+        random.shuffle(gender_source_subjects)
+        subject1_source_dir = gender_source_subjects[0]
+        subject2_source_dir = gender_source_subjects[1]
+        subject1_name = ps(subject1_source_dir)[1]
+        subject2_name = ps(subject2_source_dir)[1]
 
     # get images for both subjects
     subject1_image_paths = glob(pj(subject1_source_dir, '*.jpg'))
@@ -66,6 +94,9 @@ def gen_exp_data_dir(gender, train_samples, validation_samples):
         validation_samples = min_num_images - train_samples
 
     assert train_samples and validation_samples, 'Train and Validation sets must be larger than 0'
+
+    # print sets sizes
+    print(f'Using {train_samples} training samples and {validation_samples} validation samples.')
 
     # get random training and validation images for subject 1
     random.shuffle(subject1_image_paths)
