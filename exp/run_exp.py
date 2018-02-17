@@ -10,7 +10,7 @@ from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
 
 
-def run_experiemnt(gender,
+def run_experiment(gender,
                    train_samples,
                    validation_samples,
                    subjects=None,
@@ -23,14 +23,14 @@ def run_experiemnt(gender,
                    save_each=5,
                    learning_rate=0.001):
     """
-    Train a model on a pair of subjects, according to speficied arguments and get predictions on validation set, as well as performance metrics.
+    Train a model on a pair of subjects, according to specified arguments and get predictions on validation set, as well as performance metrics.
     :param gender: the gender of the subjects for which to create an experiment
     :param train_samples: number of training samples
     :param validation_samples: number of validation samples
     :param subjects: [optional] a tuple of exactly two subject names, of the same gender. if not set, two random subjects of the same gender will be used.
     :param img_size: [optional] height / width of input images
     :param img_channels: [optional] number of color channels in input images
-    :param num_classes: [optional] number of ouput classes
+    :param num_classes: [optional] number of output classes
     :param batch_size: [optional] number of training samples per gradient update
     :param epochs: [optional] number of iteration over the entire training set
     :param freeze_first_layers: [optional] number of layers to freeze
