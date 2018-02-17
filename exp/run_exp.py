@@ -9,7 +9,6 @@ from utils.shortcuts import pj, pe, ps, dump, Paths
 from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
 
-
 def run_experiment(gender,
                    train_samples,
                    validation_samples,
@@ -102,10 +101,21 @@ def run_experiment(gender,
     print(f'Run time: {end_time - start_time}')
 
     # save experiment statistics to disk
-    exp_stats = {'Exp name:': exp_name,
+    exp_stats = {'Gender:': gender,
+                 'Exp name:': exp_name,
                  'Start time:': start_time,
                  'End time:': end_time,
                  'Run time:': (end_time - start_time),
+                 '-': '-',
+                 'Train samples:': train_samples,
+                 'Epochs:': epochs,
+                 'Batch size:': batch_size,
+                 'Steps per epoch:': ((train_samples * num_classes) // batch_size) +1,
+                 'Freeze first layers:': freeze_first_layers,
+                 'Learning_rate:': learning_rate,
+                 'Save each:': save_each,
+                 '--': '--',
+                 'validation_samples:': validation_samples,
                  'Validation Loss:': validation_loss,
                  'Validation Accuracy:': validation_accuracy,
                  'Validation Precision:': validation_precision,
