@@ -8,6 +8,7 @@ from cnn_finetune.vgg16 import vgg16_model
 from utils.shortcuts import pj, pe, ps, dump, Paths
 from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
+from utils.steps_per_epoch import spe
 
 def run_experiment(gender,
                    train_samples,
@@ -101,6 +102,7 @@ def run_experiment(gender,
     print(f'Run time: {end_time - start_time}')
 
     # save experiment statistics to disk
+    steps_int = (train_samples * num_classes) // batch_size
     exp_stats = {'Gender:': gender,
                  'Exp name:': exp_name,
                  'Start time:': start_time,
@@ -110,7 +112,7 @@ def run_experiment(gender,
                  'Train samples:': train_samples,
                  'Epochs:': epochs,
                  'Batch size:': batch_size,
-                 'Steps per epoch:': ((train_samples * num_classes) // batch_size) +1,
+                 'Steps per epoch:': spe(train_samples, num_classes, batch_size),
                  'Freeze first layers:': freeze_first_layers,
                  'Learning_rate:': learning_rate,
                  'Save each:': save_each,
