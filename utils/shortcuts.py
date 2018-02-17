@@ -27,9 +27,9 @@ def mkdirs(dir_path):
     return dir_path
 
 
-def dump(iterable, file_name, append=False):
+def dump(iterable, file_name, append=False, delimiter='\t'):
     with open(file_name, 'a' if append else 'w', encoding='utf-8') as f:
-        f.writelines(('\t'.join(str(ll) for ll in l) if type(l) != str and hasattr(l, '__iter__') else str(l)).rstrip('\r\n') + '\n' for l in ([iterable] if type(iterable) == str else iterable))
+        f.writelines((delimiter.join(str(ll) for ll in l) if type(l) != str and hasattr(l, '__iter__') else str(l)).rstrip('\r\n') + '\n' for l in ([iterable] if type(iterable) == str else iterable))
 
 
 def objdump(obj, path):

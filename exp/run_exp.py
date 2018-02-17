@@ -82,7 +82,7 @@ def run_experiemnt(gender,
                           int(validation_y_pred[ind][1]),
                           pred[0],
                           pred[1]) for ind, pred in enumerate(validation_predictions)]
-    dump(predictions_data, predictions_data_path)
+    dump(predictions_data, predictions_data_path, delimiter=',')
 
     # cross-entropy loss score on the validation/test set
     validation_loss = log_loss(validation_y_true, validation_y_pred)
