@@ -1,26 +1,17 @@
-import utils.reader
 import itertools as it
-import exp.run_exp as rexp
 
-# defining male and female lists
-M_SUBJECTS = utils.reader.M_SUBJECTS
-F_SUBJECTS = utils.reader.F_SUBJECTS
-
-# generating a list of all the possible 2-persons combinations, separately for males and females
-M_combs = list(it.combinations(M_SUBJECTS, 2))
-F_combs = list(it.combinations(F_SUBJECTS, 2))
+from utils.reader import M_SUBJECTS, F_SUBJECTS
+from exp.run_exp import run_experiment
 
 
-def run_multi_experiment(gend, **kwargs):
-    if gend == 'M':
-        combs = M_combs
-    elif gend == 'F':
-        combs = F_combs
+def run_multi_experiment(gender, **kwargs):
+    """
+    Use run_exp to all possible 2-persons combinations within a gender.
+    :param gender: the relevant gender
+    """
+
+    # generate a list of all possible 2-persons combinations, according to specified gender
+    combs = it.combinations(M_SUBJECTS, 2) if gender == 'M' else it.combinations(F_SUBJECTS, 2) if gender == 'F' else []
+
     for pair in combs:
-        rexp.run_experiment(gender=gend, subjects=pair, **kwargs)
-
-    """
-    use run_exp to all possible 2-persons combinations within a gender.
-    :param gend: the relevant gender
-    :param **kwargs: rest of run_exp arguments  
-    """
+        run_experiment(gender=gender, subjects=pair, **kwargs)

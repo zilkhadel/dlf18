@@ -1,4 +1,5 @@
 import os
+import math
 import numpy as np
 import datetime as dt
 
@@ -8,7 +9,7 @@ from cnn_finetune.vgg16 import vgg16_model
 from utils.shortcuts import pj, pe, ps, dump, Paths
 from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
-from utils.steps_per_epoch import spe
+
 
 def run_experiment(gender,
                    train_samples,
@@ -44,9 +45,12 @@ def run_experiment(gender,
     print(f'Start time: {start_time}')
 
     # generate data for experiment
-    exp_name, exp_data_dir, actual_train_samples, actual_valid_samples = gen_exp_data_dir(gender, train_samples, validation_samples, subjects)
+    print(f'Generating data for experiment | Gender: {gender} | Requested train samples: {train_samples} | Requested validation samples: {validation_samples} | Subjects: {subjects}')
+    exp_name, exp_data_dir, actual_train_samples, actual_validation_samples = gen_exp_data_dir(gender, train_samples, validation_samples, subjects)
+    print(f'Generated data for experiment | Exp name: {exp_name} | Actual train samples: {actual_train_samples} | Actual validation samples: {actual_validation_samples} | Exp dir: {exp_data_dir}')
 
     # get training and validation data generators
+    print(f'Getting train and validation generators | Batch size: {batch_size} | Image size: {img_size}')
     train_generator, validation_generator = get_train_and_valid_generators(exp_data_dir, batch_size, img_size)
 
     # load vgg16 model
@@ -54,10 +58,12 @@ def run_experiment(gender,
     initial_weights_num_classes = 1000
     initial_weights = (initial_weights_path, initial_weights_num_classes)
 
-    metrics = ['accuracy']  # accuracy_score, precision_score, recall_score, f1_score
+    print(f'Loading vgg16 model | Initial weights path: {initial_weights_path} | Initial weights number of classes: {initial_weights_num_classes}')
+    metrics = ['accuracy']
     model = vgg16_model(img_size, img_size, img_channels, num_classes, initial_weights, freeze_first_layers, learning_rate, metrics)
 
-    # # start fine-tuning the model
+    # start fine-tuning the model
+    print(f'Training model | Epochs: {epochs}')
     model.fit_generator(train_generator,
                         epochs=epochs,
                         verbose=1,
@@ -66,15 +72,18 @@ def run_experiment(gender,
 
     # save final model weights to disk
     final_weights_path = pj(exp_data_dir, f'{exp_name}_weights_final.h5')
+    print(f'Saving model weights | Path: {final_weights_path}')
     model.save_weights(final_weights_path)
 
     # make predictions on the validation/test set
+    print('Making predictions on validation set')
     validation_predictions = model.predict_generator(validation_generator, verbose=1)
     validation_y_pred = np.rint(validation_predictions)
     validation_y_true = np.array([[1-yt, yt] for yt in validation_generator.classes])  # Important: validation generator must be used with shuffle=False for this to work.
 
     # generate predictions object and save it to exp_data_dir
     predictions_data_path = pj(exp_data_dir, f'{exp_name}_validations_predictions.csv')
+    print(f'Saving predictions on validation set | Path: {predictions_data_path}')
     predictions_data = [('class', 'filename', 'y_true', 'y_pred', 'prob_0', 'prob_1')]
     predictions_data += [(validation_generator.class_indices[ps(validation_generator.filenames[ind])[0]],
                           ps(validation_generator.filenames[ind])[1],
@@ -85,6 +94,7 @@ def run_experiment(gender,
     dump(predictions_data, predictions_data_path, delimiter=',')
 
     # cross-entropy loss score on the validation/test set
+    print('Getting metrics on validation set predictions')
     validation_loss = log_loss(validation_y_true, validation_y_pred)
     validation_accuracy = accuracy_score(validation_y_true, validation_y_pred)
     validation_precision = precision_score(validation_y_true, validation_y_pred, average=None)
@@ -102,7 +112,6 @@ def run_experiment(gender,
     print(f'Run time: {end_time - start_time}')
 
     # save experiment statistics to disk
-    steps_int = (train_samples * num_classes) // batch_size
     exp_stats = {'Gender:': gender,
                  'Exp name:': exp_name,
                  'Start time:': start_time,
@@ -112,16 +121,16 @@ def run_experiment(gender,
                  'Train samples:': train_samples,
                  'Epochs:': epochs,
                  'Batch size:': batch_size,
-                 'Steps per epoch:': spe(train_samples, num_classes, batch_size),
+                 'Steps per epoch:': math.ceil((train_samples * num_classes) / batch_size),
                  'Freeze first layers:': freeze_first_layers,
-                 'Learning_rate:': learning_rate,
+                 'Learning rate:': learning_rate,
                  'Save each:': save_each,
                  '--': '--',
-                 'validation_samples:': validation_samples,
-                 'Validation Loss:': validation_loss,
-                 'Validation Accuracy:': validation_accuracy,
-                 'Validation Precision:': validation_precision,
-                 'Validation Recall:': validation_recall,
+                 'Validation samples:': validation_samples,
+                 'Validation loss:': validation_loss,
+                 'Validation accuracy:': validation_accuracy,
+                 'Validation precision:': validation_precision,
+                 'Validation recall:': validation_recall,
                  'Validation F1:': validation_f1,
                  '': ''}
 
