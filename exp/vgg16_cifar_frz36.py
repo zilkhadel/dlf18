@@ -41,10 +41,10 @@ if __name__ == '__main__':
     img_rows, img_cols = 224, 224   # height and width of input images
     img_channels = 3                # number of color channels in input images
     num_classes = 10                # number of ouput classes
-    train_samples = 50  # 3000      # number of training samples
-    valid_samples = 10  # 100       # number of validation samples
-    batch_size = 25     # 16        # number of training samples per gradient update
-    epochs = 1          # 10        # number of iteration over the entire training set
+    train_samples = 3000      	    # number of training samples
+    valid_samples = 100       	    # number of validation samples
+    batch_size = 50        	    # number of training samples per gradient update
+    epochs = 10        		    # number of iteration over the entire training set
     freeze_first_layers = 36        # number of first layers to freeze
     save_each = 5                   # number of batches after which to save weights
     learning_rate = 0.001           # the step to use in each gradient update
