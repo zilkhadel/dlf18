@@ -6,7 +6,7 @@ import datetime as dt
 from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score, f1_score, classification_report
 from cnn_finetune.vgg16 import vgg16_model
 
-from utils.shortcuts import pj, pe, ps, dump, Paths
+from utils.shortcuts import pj, pe, ps, dump, objdump, Paths
 from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
 
@@ -77,9 +77,14 @@ def run_experiment(gender,
 
     # make predictions on the validation/test set
     print('Making predictions on validation set')
+    # make predictions on validation set
     validation_predictions = model.predict_generator(validation_generator, verbose=1)
-    validation_y_pred = np.rint(validation_predictions)
-    validation_y_true = np.array([[1-yt, yt] for yt in validation_generator.classes])  # Important: validation generator must be used with shuffle=False for this to work.
+
+    # convert the probabilities matrix to an array of predicted classes (since it's binary classification, it's the same as 1-hot vectors).
+    validation_y_pred = np.array([np.argmax(p) for p in validation_predictions], dtype=np.float32)
+
+    # generate an array of true classes. Important: validation generator must be used with shuffle=False for this to work.
+    validation_y_true = validation_generator.classes  # np.array([[1-yt, yt] for yt in validation_generator.classes], dtype=np.float32)
 
     # generate predictions object and save it to exp_data_dir
     predictions_data_path = pj(exp_data_dir, f'{exp_name}_validations_predictions.csv')
@@ -87,19 +92,20 @@ def run_experiment(gender,
     predictions_data = [('class', 'filename', 'y_true', 'y_pred', 'prob_0', 'prob_1')]
     predictions_data += [(validation_generator.class_indices[ps(validation_generator.filenames[ind])[0]],
                           ps(validation_generator.filenames[ind])[1],
-                          validation_y_true[ind][1],
-                          int(validation_y_pred[ind][1]),
+                          validation_y_true[ind],
+                          int(validation_y_pred[ind]),
                           pred[0],
                           pred[1]) for ind, pred in enumerate(validation_predictions)]
     dump(predictions_data, predictions_data_path, delimiter=',')
+    objdump([validation_y_true, validation_y_pred], pj(exp_data_dir, f'{exp_name}_validations_predictions.pkl'))
 
     # cross-entropy loss score on the validation/test set
     print('Getting metrics on validation set predictions')
     validation_loss = log_loss(validation_y_true, validation_y_pred)
     validation_accuracy = accuracy_score(validation_y_true, validation_y_pred)
-    validation_precision = precision_score(validation_y_true, validation_y_pred, average=None)
-    validation_recall = recall_score(validation_y_true, validation_y_pred, average=None)
-    validation_f1 = f1_score(validation_y_true, validation_y_pred, average=None)
+    validation_precision = precision_score(validation_y_true, validation_y_pred, average='micro')
+    validation_recall = recall_score(validation_y_true, validation_y_pred, average='micro')
+    validation_f1 = f1_score(validation_y_true, validation_y_pred, average='micro')
 
     # save classification report
     report = classification_report(validation_y_true, validation_y_pred, list(validation_generator.class_indices.values()), list(validation_generator.class_indices.keys()))
