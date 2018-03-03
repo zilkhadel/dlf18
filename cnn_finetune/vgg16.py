@@ -82,7 +82,10 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
         model.layers.pop()
         model.outputs = [model.layers[-1].output]
         model.layers[-1].outbound_nodes = []
-        model.add(Dense(num_classes, activation='softmax'))
+        if num_classes > 2:
+            model.add(Dense(num_classes, activation='softmax'))
+        else:
+            model.add(Dense(num_classes, activation='sigmoid'))  # use just 1 class?
 
     # freeze layers
     for layer in model.layers[:freeze_first_layers]:
@@ -90,6 +93,6 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
 
     # compile model
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=metrics or [])
+    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=metrics or [])  # binary_crossentropy
 
     return model
