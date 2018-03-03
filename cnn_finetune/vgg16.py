@@ -91,8 +91,11 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
     for layer in model.layers[:freeze_first_layers]:
         layer.trainable = False
 
+    # set loss
+    loss = 'categorical_crossentropy' if num_classes > 2 else 'binary_crossentropy'
+
     # compile model
     sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=metrics or [])  # binary_crossentropy
+    model.compile(optimizer=sgd, loss=loss, metrics=metrics or [])
 
     return model
