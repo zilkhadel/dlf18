@@ -106,7 +106,7 @@ def run_experiment(gender,
         validation_y_pred = np.array([np.argmax(p) for p in validation_predictions], dtype=np.float32)
 
     else:  # if binary classification
-        validation_y_pred = np.array([1 if p > 0.5 else 0 for p in validation_predictions], dtype=np.float32)
+        validation_y_pred = np.array([0 if p > 0.5 else 1 for p in validation_predictions], dtype=np.float32)
 
     # generate an array of true classes. Important: validation generator must be used with shuffle=False for this to work.
     validation_y_true = validation_generator.classes  # np.array([[1-yt, yt] for yt in validation_generator.classes], dtype=np.float32)
