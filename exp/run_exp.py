@@ -65,9 +65,10 @@ def run_experiment(gender,
     # start fine-tuning the model
     print(f'Training model | Epochs: {epochs}')
     model.fit_generator(train_generator,
+                        steps_per_epoch=train_samples // batch_size,
                         epochs=epochs,
-                        verbose=1,
                         validation_data=validation_generator,
+                        validation_steps=validation_samples // batch_size,
                         callbacks=[WeightsSaver(model, save_each, exp_data_dir)])
 
     # save final model weights to disk
@@ -94,8 +95,7 @@ def run_experiment(gender,
                           ps(validation_generator.filenames[ind])[1],
                           validation_y_true[ind],
                           int(validation_y_pred[ind]),
-                          pred[0],
-                          pred[1]) for ind, pred in enumerate(validation_predictions)]
+                          pred[0]) for ind, pred in enumerate(validation_predictions)]
     dump(predictions_data, predictions_data_path, delimiter=',')
     objdump([validation_y_true, validation_y_pred], pj(exp_data_dir, f'{exp_name}_validations_predictions.pkl'))
 

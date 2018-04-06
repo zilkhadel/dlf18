@@ -21,10 +21,15 @@ def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
 
     # generate an ImageDataGenerator that does data augmentation by applying manipulations to train samples.
     train_datagen = ImageDataGenerator(
-        # rescale=1. / 255,
+        # rotation_range=40,
+        # width_shift_range=0.2,
+        # height_shift_range=0.2,
+        rescale=1. / 255,
         shear_range=0.2,
         zoom_range=0.2,
-        horizontal_flip=True)
+        horizontal_flip=True,
+        # fill_mode='nearest'
+    )
 
     # read train samples from train_dir
     train_generator = train_datagen.flow_from_directory(
@@ -32,17 +37,19 @@ def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
         target_size=(image_size, image_size),
         batch_size=batch_size,
         shuffle=True,
-        class_mode='categorical')
+        class_mode='binary')
 
     # generate an ImageDataGenerator that does no manipulations to validation samples.
-    validation_datagen = ImageDataGenerator()  # rescale=1. / 255
+    validation_datagen = ImageDataGenerator(
+        rescale=1. / 255
+    )
 
     # read validation samples from validation_dir
     validation_generator = validation_datagen.flow_from_directory(
         validation_dir,
         target_size=(image_size, image_size),
         batch_size=batch_size,
-        class_mode='categorical')
+        class_mode='binary')
 
     return train_generator, validation_generator
 

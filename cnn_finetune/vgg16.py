@@ -1,9 +1,9 @@
 from keras.models import Sequential
-from keras.optimizers import SGD
+from keras.optimizers import SGD, Adam
 from keras.layers import Dense, Convolution2D, MaxPooling2D, ZeroPadding2D, Dropout, Flatten  # , Input, AveragePooling2D, merge, Reshape, Activation
 
 
-def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights=None, freeze_first_layers=None, learning_rate=1e-3, metrics=None):
+def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights=None, freeze_first_layers=None, learning_rate=1e-4, metrics=None):
     """VGG 16 Model for Keras
 
     Model Schema is based on
@@ -85,7 +85,7 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
         if num_classes > 2:
             model.add(Dense(num_classes, activation='softmax'))
         else:
-            model.add(Dense(num_classes, activation='sigmoid'))  # use just 1 class?
+            model.add(Dense(1, activation='sigmoid'))
 
     # freeze layers
     for layer in model.layers[:freeze_first_layers]:
@@ -93,9 +93,9 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
 
     # set loss
     loss = 'categorical_crossentropy' if num_classes > 2 else 'binary_crossentropy'
+    optimizer = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)  # if num_classes > 2 else 'rmsprop'
 
     # compile model
-    sgd = SGD(lr=learning_rate, decay=1e-6, momentum=0.9, nesterov=True)
-    model.compile(optimizer=sgd, loss=loss, metrics=metrics or [])
+    model.compile(optimizer=optimizer, loss=loss, metrics=metrics or [])
 
     return model
