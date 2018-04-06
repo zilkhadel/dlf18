@@ -1,14 +1,15 @@
 import os
-import math
 import numpy as np
 import datetime as dt
 
 from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score, f1_score, classification_report
-from cnn_finetune.vgg16 import vgg16_model
 
 from utils.shortcuts import pj, pe, ps, dump, objdump, Paths
 from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
 from utils.saver import WeightsSaver
+
+
+models = ['vgg16', 'bcn']
 
 
 def run_experiment(gender,
@@ -22,12 +23,13 @@ def run_experiment(gender,
                    epochs=10,
                    freeze_first_layers=36,
                    save_each=5,
-                   learning_rate=0.001):
+                   learning_rate=0.001,
+                   model='vgg16'):
     """
     Train a model on a pair of subjects, according to specified arguments and get predictions on validation set, as well as performance metrics.
     :param gender: the gender of the subjects for which to create an experiment
-    :param train_samples: number of training samples
-    :param validation_samples: number of validation samples
+    :param train_samples: number of training samples per class
+    :param validation_samples: number of validation samples per class
     :param subjects: [optional] a tuple of exactly two subject names, of the same gender. if not set, two random subjects of the same gender will be used.
     :param img_size: [optional] height / width of input images
     :param img_channels: [optional] number of color channels in input images
@@ -37,39 +39,57 @@ def run_experiment(gender,
     :param freeze_first_layers: [optional] number of layers to freeze
     :param save_each: [optional] number of batches after which to save intermediate weights h5 file
     :param learning_rate: [optional] the step to use in each gradient update
+    :param model: [optional] the name of the model to use (vgg16/bcn)
     :return:
     """
+
+    assert model in models, f'{model} is not supported! available models: {str(models)}'
 
     # print start time
     start_time = dt.datetime.now()
     print(f'Start time: {start_time}')
 
     # generate data for experiment
-    print(f'Generating data for experiment | Gender: {gender} | Requested train samples: {train_samples} | Requested validation samples: {validation_samples} | Subjects: {subjects}')
+    print(f'Generating data for experiment | Gender: {gender} | Requested train samples (per class): {train_samples} | Requested validation samples (per class): {validation_samples} | Subjects: {subjects}')
     exp_name, exp_data_dir, actual_train_samples, actual_validation_samples = gen_exp_data_dir(gender, train_samples, validation_samples, subjects)
-    print(f'Generated data for experiment | Exp name: {exp_name} | Actual train samples: {actual_train_samples} | Actual validation samples: {actual_validation_samples} | Exp dir: {exp_data_dir}')
+    total_train_samples = actual_train_samples * 2
+    total_validation_samples = actual_validation_samples * 2
+    print(f'Generated data for experiment | Exp name: {exp_name} | Total train samples: {total_train_samples} | Total validation samples: {total_validation_samples} | Exp dir: {exp_data_dir}')
 
     # get training and validation data generators
     print(f'Getting train and validation generators | Batch size: {batch_size} | Image size: {img_size}')
     train_generator, validation_generator = get_train_and_valid_generators(exp_data_dir, batch_size, img_size)
 
-    # load vgg16 model
-    initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    initial_weights_num_classes = 1000
-    initial_weights = (initial_weights_path, initial_weights_num_classes)
-
-    print(f'Loading vgg16 model | Initial weights path: {initial_weights_path} | Initial weights number of classes: {initial_weights_num_classes}')
+    # load model
     metrics = ['accuracy']
-    model = vgg16_model(img_size, img_size, img_channels, num_classes, initial_weights, freeze_first_layers, learning_rate, metrics)
+    if model == 'vgg16':
+        # load vgg16 model
+        from cnn_finetune.vgg16 import vgg16_model
+        initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
+        initial_weights_num_classes = 1000
+        initial_weights = (initial_weights_path, initial_weights_num_classes)
+
+        print(f'Loading vgg16 model | Initial weights path: {initial_weights_path} | Initial weights number of classes: {initial_weights_num_classes}')
+        model = vgg16_model(img_size, img_size, img_channels, num_classes, initial_weights, freeze_first_layers, learning_rate, metrics)
+
+    elif model == 'bcn':
+        # load binary convnet model
+        from cnn_finetune.small_convnet import binary_convnet_model
+        model = binary_convnet_model(img_size, img_size, img_channels, metrics)
+
+    else:
+        model = None
 
     # start fine-tuning the model
     print(f'Training model | Epochs: {epochs}')
-    model.fit_generator(train_generator,
-                        steps_per_epoch=train_samples // batch_size,
-                        epochs=epochs,
-                        validation_data=validation_generator,
-                        validation_steps=validation_samples // batch_size,
-                        callbacks=[WeightsSaver(model, save_each, exp_data_dir)])
+    model.fit_generator(
+        train_generator,
+        steps_per_epoch=total_train_samples // batch_size,
+        epochs=epochs,
+        validation_data=validation_generator,
+        validation_steps=total_validation_samples // batch_size,
+        # callbacks=[WeightsSaver(model, save_each, exp_data_dir)]
+    )
 
     # save final model weights to disk
     final_weights_path = pj(exp_data_dir, f'{exp_name}_weights_final.h5')
@@ -82,7 +102,11 @@ def run_experiment(gender,
     validation_predictions = model.predict_generator(validation_generator, verbose=1)
 
     # convert the probabilities matrix to an array of predicted classes (since it's binary classification, it's the same as 1-hot vectors).
-    validation_y_pred = np.array([np.argmax(p) for p in validation_predictions], dtype=np.float32)
+    if num_classes > 2:
+        validation_y_pred = np.array([np.argmax(p) for p in validation_predictions], dtype=np.float32)
+
+    else:  # if binary classification
+        validation_y_pred = np.array([1 if p > 0.5 else 0 for p in validation_predictions], dtype=np.float32)
 
     # generate an array of true classes. Important: validation generator must be used with shuffle=False for this to work.
     validation_y_true = validation_generator.classes  # np.array([[1-yt, yt] for yt in validation_generator.classes], dtype=np.float32)
@@ -90,7 +114,7 @@ def run_experiment(gender,
     # generate predictions object and save it to exp_data_dir
     predictions_data_path = pj(exp_data_dir, f'{exp_name}_validations_predictions.csv')
     print(f'Saving predictions on validation set | Path: {predictions_data_path}')
-    predictions_data = [('class', 'filename', 'y_true', 'y_pred', 'prob_0', 'prob_1')]
+    predictions_data = [('class', 'filename', 'y_true', 'y_pred', 'prob_0')]
     predictions_data += [(validation_generator.class_indices[ps(validation_generator.filenames[ind])[0]],
                           ps(validation_generator.filenames[ind])[1],
                           validation_y_true[ind],
@@ -124,15 +148,15 @@ def run_experiment(gender,
                  'End time:': end_time,
                  'Run time:': (end_time - start_time),
                  '-': '-',
-                 'Train samples:': train_samples,
+                 'Train samples:': total_train_samples,
                  'Epochs:': epochs,
                  'Batch size:': batch_size,
-                 'Steps per epoch:': math.ceil((train_samples * num_classes) / batch_size),
+                 'Steps per epoch:': total_train_samples // batch_size,
                  'Freeze first layers:': freeze_first_layers,
                  'Learning rate:': learning_rate,
                  'Save each:': save_each,
                  '--': '--',
-                 'Validation samples:': validation_samples,
+                 'Validation samples:': total_validation_samples,
                  'Validation loss:': validation_loss,
                  'Validation accuracy:': validation_accuracy,
                  'Validation precision:': validation_precision,
