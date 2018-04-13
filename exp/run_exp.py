@@ -1,20 +1,22 @@
 import os
+import shutil
 import numpy as np
 import datetime as dt
+from glob import glob
 
 from sklearn.metrics import log_loss, accuracy_score, precision_score, recall_score, f1_score, classification_report
 
-from utils.shortcuts import pj, pe, ps, dump, objdump, Paths
-from utils.reader import gen_exp_data_dir, get_train_and_valid_generators
-from utils.saver import WeightsSaver
+from utils.shortcuts import pj, pe, ps, mkdirs, dump, objdump, Paths
+from utils.reader import gen_exp_data_dir, get_train_and_valid_generators, M_SUBJECTS, F_SUBJECTS
+# from utils.saver import WeightsSaver
 
 
 models = ['vgg16', 'bcn']
 
 
-def run_experiment(gender,
-                   train_samples,
-                   validation_samples,
+def run_experiment(gender=None,
+                   train_samples=None,
+                   validation_samples=None,
                    subjects=None,
                    img_size=224,
                    img_channels=3,
@@ -24,7 +26,8 @@ def run_experiment(gender,
                    freeze_first_layers=36,
                    save_each=5,
                    learning_rate=0.001,
-                   model='vgg16'):
+                   model='vgg16',
+                   prev_exp_dir=None):
     """
     Train a model on a pair of subjects, according to specified arguments and get predictions on validation set, as well as performance metrics.
     :param gender: the gender of the subjects for which to create an experiment
@@ -40,8 +43,11 @@ def run_experiment(gender,
     :param save_each: [optional] number of batches after which to save intermediate weights h5 file
     :param learning_rate: [optional] the step to use in each gradient update
     :param model: [optional] the name of the model to use (vgg16/bcn)
+    :param prev_exp_dir: [optional] an existing experiment dir to use train/validation images from (if specified, no need to specify gender, train_samples, validation_samples).
     :return:
     """
+
+    assert (gender and train_samples and validation_samples) or prev_exp_dir, 'Either prev_exp_dir or gender and train_samples and validation_samples must be specified!'
 
     assert model in models, f'{model} is not supported! available models: {str(models)}'
 
@@ -50,11 +56,39 @@ def run_experiment(gender,
     print(f'Start time: {start_time}')
 
     # generate data for experiment
-    print(f'Generating data for experiment | Gender: {gender} | Requested train samples (per class): {train_samples} | Requested validation samples (per class): {validation_samples} | Subjects: {subjects}')
-    exp_name, exp_data_dir, actual_train_samples, actual_validation_samples = gen_exp_data_dir(gender, train_samples, validation_samples, subjects)
-    total_train_samples = actual_train_samples * 2
-    total_validation_samples = actual_validation_samples * 2
-    print(f'Generated data for experiment | Exp name: {exp_name} | Total train samples: {total_train_samples} | Total validation samples: {total_validation_samples} | Exp dir: {exp_data_dir}')
+    if prev_exp_dir:
+        # init experiment data dir with subject names from prev_exp_dir and new timestamp
+        subject1_name, subject2_name, old_timestamp = ps(prev_exp_dir)[1].split('_', 2)
+        timestamp = dt.datetime.now().strftime('%Y-%m-%d_%H%M')
+        exp_name = f'{subject1_name}_{subject2_name}_{timestamp}'
+        exp_data_dir = pj(Paths.experiments_dir, exp_name)
+        mkdirs(exp_data_dir)
+
+        # copy train and validation images from prev_exp_dir to exp_data_dir
+        shutil.copy(pj(prev_exp_dir, 'train'), pj(exp_data_dir, 'train'))
+        shutil.copy(pj(prev_exp_dir, 'validation'), pj(exp_data_dir, 'validation'))
+
+        assert (subject1_name in M_SUBJECTS and subject2_name in M_SUBJECTS) or (subject1_name in F_SUBJECTS and subject2_name in F_SUBJECTS), f'Subjects in {prev_exp_dir} are from different genders!'
+
+        subjects = (subject1_name, subject2_name)
+
+        gender = 'M' if subject1_name in M_SUBJECTS else 'F'
+
+        total_train_samples = len(glob(pj(exp_data_dir, 'train', '**', '*.jpg'), recursive=True))
+        total_validation_samples = len(glob(pj(exp_data_dir, 'validation', '**', '*.jpg'), recursive=True))
+
+        # train_samples = total_train_samples // 2
+        # validation_samples = total_validation_samples // 2
+
+        print(f'Using data for experiment | Exp name: {exp_name} | Gender: {gender} | Total train samples: {total_train_samples} | Total validation samples: {total_validation_samples} | Subjects: {subjects}')
+    else:
+        print(f'Generating data for experiment | Gender: {gender} | Requested train samples (per class): {train_samples} | Requested validation samples (per class): {validation_samples} | Subjects: {subjects}')
+        exp_name, exp_data_dir, actual_train_samples, actual_validation_samples = gen_exp_data_dir(gender, train_samples, validation_samples, subjects)
+        total_train_samples = actual_train_samples * 2
+        total_validation_samples = actual_validation_samples * 2
+        print(f'Generated data for experiment | Exp name: {exp_name} | Total train samples: {total_train_samples} | Total validation samples: {total_validation_samples} | Exp dir: {exp_data_dir}')
+
+    print(f'Using exp data dir: {exp_data_dir}')
 
     # get training and validation data generators
     print(f'Getting train and validation generators | Batch size: {batch_size} | Image size: {img_size}')
