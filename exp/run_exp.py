@@ -65,8 +65,8 @@ def run_experiment(gender=None,
         mkdirs(exp_data_dir)
 
         # copy train and validation images from prev_exp_dir to exp_data_dir
-        shutil.copy(pj(prev_exp_dir, 'train'), pj(exp_data_dir, 'train'))
-        shutil.copy(pj(prev_exp_dir, 'validation'), pj(exp_data_dir, 'validation'))
+        shutil.copytree(pj(prev_exp_dir, 'train'), pj(exp_data_dir, 'train'))
+        shutil.copytree(pj(prev_exp_dir, 'validation'), pj(exp_data_dir, 'validation'))
 
         assert (subject1_name in M_SUBJECTS and subject2_name in M_SUBJECTS) or (subject1_name in F_SUBJECTS and subject2_name in F_SUBJECTS), f'Subjects in {prev_exp_dir} are from different genders!'
 
