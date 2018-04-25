@@ -1,9 +1,13 @@
 from keras.models import Sequential
-from keras.optimizers import SGD, Adam
+from keras.optimizers import SGD
 from keras.layers import Dense, Convolution2D, MaxPooling2D, ZeroPadding2D, Dropout, Flatten  # , Input, AveragePooling2D, merge, Reshape, Activation
 
 
-def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weights=None, freeze_first_layers=None, learning_rate=1e-4, metrics=None):
+IMG_SIZE = 224
+IMG_CHANNELS = 3
+
+
+def vgg16_model(img_rows=IMG_SIZE, img_cols=IMG_SIZE, channels=IMG_CHANNELS, num_classes=None, initial_weights=None, freeze_first_layers=None, learning_rate=1e-4, metrics=None):
     """VGG 16 Model for Keras
 
     Model Schema is based on
@@ -22,9 +26,11 @@ def vgg16_model(img_rows, img_cols, channels=1, num_classes=None, initial_weight
       metrics - a list of strings and/or callback functions to use for metrics at the end of each batch.
     """
 
+    # init initial weights
     initial_weights_path = initial_weights[0] if initial_weights else None
     initial_weights_num_classes = initial_weights[1] if initial_weights else 1000
 
+    # construct model
     model = Sequential()
     model.add(ZeroPadding2D((1, 1), input_shape=(img_rows, img_cols, channels)))
     model.add(Convolution2D(64, (3, 3), activation='relu'))

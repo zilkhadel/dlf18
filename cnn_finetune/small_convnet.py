@@ -3,7 +3,13 @@ from keras.layers import Conv2D, MaxPooling2D
 from keras.layers import Activation, Dropout, Flatten, Dense
 
 
-def binary_convnet_model(img_rows, img_cols, channels=3, metrics=None):
+IMG_SIZE = 224
+IMG_CHANNELS = 3
+
+
+def binary_convnet_model(img_rows=IMG_SIZE, img_cols=IMG_SIZE, channels=IMG_CHANNELS, initial_weights_path=None, metrics=None):
+
+    # construct model
     model = Sequential()
     model.add(Conv2D(128, (3, 3), input_shape=(img_rows, img_cols, channels)))
     model.add(Activation('relu'))
@@ -23,6 +29,10 @@ def binary_convnet_model(img_rows, img_cols, channels=3, metrics=None):
     model.add(Dropout(0.5))
     model.add(Dense(1))
     model.add(Activation('sigmoid'))
+
+    # load pre-trained weights
+    if initial_weights_path:
+        model.load_weights(initial_weights_path)
 
     model.compile(loss='binary_crossentropy', optimizer='rmsprop', metrics=metrics)
 

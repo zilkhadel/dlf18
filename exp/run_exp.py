@@ -109,7 +109,7 @@ def run_experiment(gender=None,
     elif model == 'bcn':
         # load binary convnet model
         from cnn_finetune.small_convnet import binary_convnet_model
-        model = binary_convnet_model(img_size, img_size, img_channels, metrics)
+        model = binary_convnet_model(img_size, img_size, img_channels, metrics=metrics)
 
     else:
         model = None
@@ -135,7 +135,7 @@ def run_experiment(gender=None,
     # make predictions on validation set
     validation_predictions = model.predict_generator(validation_generator, verbose=1)
 
-    # convert the probabilities matrix to an array of predicted classes (since it's binary classification, it's the same as 1-hot vectors).
+    # convert the probabilities matrix to an array of predicted classes
     if num_classes > 2:
         validation_y_pred = np.array([np.argmax(p) for p in validation_predictions], dtype=np.float32)
 
@@ -176,8 +176,8 @@ def run_experiment(gender=None,
     print(f'Run time: {end_time - start_time}')
 
     # save experiment statistics to disk
-    exp_stats = {'Gender:': gender,
-                 'Exp name:': exp_name,
+    exp_stats = {'Exp name:': exp_name,
+                 'Gender:': gender,
                  'Start time:': start_time,
                  'End time:': end_time,
                  'Run time:': (end_time - start_time),

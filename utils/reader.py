@@ -13,43 +13,43 @@ F_SUBJECTS = ['Veronique', 'Mathilde', 'Jeanne', 'Emma', 'Emilie', 'Claire', 'Ch
 SUBJECTS = {'M': M_SUBJECTS, 'F': F_SUBJECTS}
 
 
+def get_data_generator(data_dir, img_size, batch_size, shuffle=False, rotation_range=0., width_shift_range=0., height_shift_range=0., shear_range=0., zoom_range=0., horizontal_flip=False, fill_mode='nearest'):
+
+    # generate an ImageDataGenerator
+    datagen = ImageDataGenerator(
+        rescale=1. / 255,
+        rotation_range=rotation_range,
+        width_shift_range=width_shift_range,
+        height_shift_range=height_shift_range,
+        shear_range=shear_range,
+        zoom_range=zoom_range,
+        horizontal_flip=horizontal_flip,
+        fill_mode=fill_mode
+    )
+
+    # read samples from data_dir
+    data_generator = datagen.flow_from_directory(
+        data_dir,
+        target_size=(img_size, img_size),
+        batch_size=batch_size,
+        class_mode='binary',
+        shuffle=shuffle,
+    )
+
+    return data_generator
+
+
 def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
 
     # set train and validation dirs
     train_dir = pj(exp_data_dir, 'train')
     validation_dir = pj(exp_data_dir, 'validation')
 
-    # generate an ImageDataGenerator that does data augmentation by applying manipulations to train samples.
-    train_datagen = ImageDataGenerator(
-        rescale=1. / 255,
-        # rotation_range=40,
-        # width_shift_range=0.2,
-        # height_shift_range=0.2,
-        # shear_range=0.2,
-        # zoom_range=0.2,
-        # horizontal_flip=True,
-        # fill_mode='nearest'
-    )
+    # init train data generator
+    train_generator = get_data_generator(train_dir, image_size, batch_size, shuffle=True)  # rotation_range=40, width_shift_range=0.2, height_shift_range=0.2, shear_range=0.2, zoom_range=0.2, horizontal_flip=True
 
-    # read train samples from train_dir
-    train_generator = train_datagen.flow_from_directory(
-        train_dir,
-        target_size=(image_size, image_size),
-        batch_size=batch_size,
-        shuffle=True,
-        class_mode='binary')
-
-    # generate an ImageDataGenerator that does no manipulations to validation samples.
-    validation_datagen = ImageDataGenerator(
-        rescale=1. / 255
-    )
-
-    # read validation samples from validation_dir
-    validation_generator = validation_datagen.flow_from_directory(
-        validation_dir,
-        target_size=(image_size, image_size),
-        batch_size=batch_size,
-        class_mode='binary')
+    # init validataion data generator
+    validation_generator = get_data_generator(validation_dir, image_size, batch_size, shuffle=False)
 
     return train_generator, validation_generator
 
