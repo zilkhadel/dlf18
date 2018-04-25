@@ -10,16 +10,13 @@ from utils.reader import get_data_generator
 
 def predict_with_model(data_dir, out_dir, model_name, initial_weights_path, num_classes, batch_size=16):
 
-    # initial_weights_path = pj(Paths.pretrained_dir, 'vgg16_weights_tf_dim_ordering_tf_kernels.h5')
-    # initial_weights_num_classes = 1000
-    initial_weights = (initial_weights_path, num_classes)
-
     # create output dir
     mkdirs(out_dir)
 
     # load model
     img_size = None
     if model_name == 'vgg16':
+        initial_weights = (initial_weights_path, num_classes if num_classes > 2 else 1)
         model = vgg16_model(num_classes=num_classes, initial_weights=initial_weights)
         img_size = vgg16_img_size
     elif model_name == 'bcn':
