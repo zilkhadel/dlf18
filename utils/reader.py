@@ -21,13 +21,13 @@ def get_train_and_valid_generators(exp_data_dir, batch_size, image_size):
 
     # generate an ImageDataGenerator that does data augmentation by applying manipulations to train samples.
     train_datagen = ImageDataGenerator(
+        rescale=1. / 255,
         # rotation_range=40,
         # width_shift_range=0.2,
         # height_shift_range=0.2,
-        rescale=1. / 255,
-        shear_range=0.2,
-        zoom_range=0.2,
-        horizontal_flip=True,
+        # shear_range=0.2,
+        # zoom_range=0.2,
+        # horizontal_flip=True,
         # fill_mode='nearest'
     )
 
